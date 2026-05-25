@@ -36,7 +36,7 @@ class adminmodel{
     }
 
     public function SaveOTP($email, $otp, $expiry){
-        $query = "UPDATE admins SET otp=?, otp_expiry=? WHERE id=?";
+        $query = "UPDATE admins SET otp=?, otp_expiry=? WHERE email=?";
         $stmt = mysqli_prepare($this->conn, $query);
         mysqli_stmt_bind_param($stmt, 'sss', $otp, $expiry, $email);
         return mysqli_stmt_execute($stmt);
