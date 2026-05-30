@@ -20,18 +20,47 @@ class Admin{
 
             $admin = $this->model->login($username);
 
+            if(!$admin){
+                echo "Invaild Username";
+                exit;
+            }
+
+            if($admin['account_locked'] == 1){
+                $locktime = strtotime($admin['lock_time']);
+                $current = time();
+                $diff = $current - $locktime;
+                if($diff >= 900){
+                    $this->model->unlockAccout($admin['id']);
+                } else{
+                    echo "Account Locked for 15 minutes";
+                    exit();
+                }
+            } 
+
             if($admin && password_verify($password, $admin['password'])){
 
                 session_regenerate_id(true);
                 $_SESSION['admin'] = $admin['username'];
                 $_SESSION['admin_id'] = $admin['id'];
-                
+
+                $this->model->updateloginAttept($admin['id'],0);
+                $this->model->updateLastlogin($admin['id']);
+                $this->model->insertLoginHistory($admin['id'],$_SERVER['SERVER_ADDR'],'success');
+                $this->model->activityLog($admin['id'],'Admin Login');
                 echo "success";
                 // header("Location: /ccccc/admin/application/view/dashboard.php");
                 exit;
 
             } else {
-
+                // echo $admin['login_attempt'];
+                // exit;
+                $attempt = $admin['login_attempt'] +1;
+                $this->model->updateloginAttept($admin['id'],$attempt);
+                $this->model->insertLoginHistory($admin['id'],$_SERVER['REMOTE_ADDR'],'Failed');
+                if($attempt >= 5){
+                    $this->model->LockAccout($admin['id']);
+                    echo "Account Locked";
+                }
                 echo "Invaild Username and Password";
                 exit;
             }
